@@ -3,8 +3,8 @@ data "aws_vpc" "default" {
 }
 
 data "aws_eks_cluster" "example" {
-  name = local.eks_cluster_name
-  depends_on = [ aws_eks_cluster.eks ]
+  name       = local.eks_cluster_name
+  depends_on = [aws_eks_cluster.eks]
 }
 
 output "endpoint" {
