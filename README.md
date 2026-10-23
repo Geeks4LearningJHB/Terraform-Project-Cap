@@ -1,7 +1,25 @@
-  #olivier-m-eks-dev/qa/prod
+Marie-Tinka Olivier 
+Terraform Project
+23 October
 
 Below is a clear outline of the steps I completed and actions I have taken as a "proof of work".
+Also find "Evidence" screenshots attached in the repo.
 
+The Project Structure along with Trade-offs and limitations are outlined at the end of this file.
+
+
+*********************************************************************************************************
+SUMMARY
+*********************************************************************************************************
+This project provisions an Amazon EKS Kubernetes cluster in AWS for three environments: dev, qa and prod. Each environment has its own VPC, cluster, worker nodes and Terraform state. The state is stored in a separate S3 bucket per environment (olivier-m-s3-dev, -qa, -prod), with locking to prevent simultaneous changes.
+
+Two one-time bootstrap folders create what Terraform needs first: bootstrap/state-backend creates the state buckets, and bootstrap/github-oidc creates an IAM role that GitHub Actions can assume. A GitHub Actions workflow checks formatting, plans every environment on each pull request (posting the plan as a comment), and applies on merge to main. The workflow logs in with that role, so no AWS keys are stored in GitHub. Prod requires approval before it applies.
+
+Dev was deployed and tested: both worker nodes became Ready, a test nginx app was reachable on NodePort 30007, and the environment was destroyed to confirm clean teardown.
+
+*********************************************************************************************************
+STEPS TAKEN & PROCESS DOCUMENTED
+*********************************************************************************************************
 1. 
 In modules/capitec_eks/eks.tf
 In resource "aws_vpc" "main" I added:
@@ -61,7 +79,6 @@ CLUSTER CREATION
 >> node group (2 x EC2 worker machines) launches and joins the Kubernetes control plane
 >> until AWS says the resource is ready, Terraform waits.
 
-
 12. 
 kubectl connected to the cluster
 Marie-TinkaOlivier@CMAC-CTXPF215WG Terraform-Project-Cap % kubectl get nodes
@@ -69,7 +86,6 @@ Marie-TinkaOlivier@CMAC-CTXPF215WG Terraform-Project-Cap % kubectl get nodes
 NAME                                        STATUS   ROLES    AGE   VERSION
 ip-10-0-0-37.af-south-1.compute.internal    Ready    <none>   23m   v1.35.8-eks-b9510e3
 ip-10-0-1-153.af-south-1.compute.internal   Ready    <none>   23m   v1.35.8-eks-b9510e3
-
 
 13. 
 Ran kubectl apply -f k8s/nginx.yaml to let Kubernetes compare to what exists and make necessary updates.
@@ -163,7 +179,6 @@ Create OIDC (Open ID Connect) role
 
 WHY?
 >> Must exist before pipeline can log in
-
 
 I ran the following:
 
@@ -265,10 +280,13 @@ Add chekcsum for Linux on Github:
 
 terraform providers lock -platform=linux_amd64 -platform=darwin_arm64
 
+24. 
+Destroyed dev environment using:
+terraform destroy -var-file=envs/dev/dev.tfvars
 
-
-README
-
+*********************************************************************************************************
+PROJECT STRUCTURE & WITH TRADE-OFFS AND LIMITATIONS
+*********************************************************************************************************
 1. Project Structure
    WHAT 
     * envs/ 
@@ -355,25 +373,7 @@ README
         CONS
             >> the unrestricted permissions implies no safety net upon accidental destroy (for example)
             >> not production-compliant
+*********************************************************************************************************
 
-    4.4
-            WHAT 
-                * Prod - no delete protection
-            PROS       
-                >> 
-            CONS
-                >> 
-                
- 
-    4.5
-            WHAT 
-                * Fewer AZs (Availability Zones) in Dev
-            PROS       
-                >> 
-            CONS
-                >> 
-                               
 
-****************************************
-TODO: set prevent_destroy only for prod () so nobody can delete prod state by accident. Reuse the `modules/capitec_s3` module, or write the resources directly.
-*                  
+Thank you :)
