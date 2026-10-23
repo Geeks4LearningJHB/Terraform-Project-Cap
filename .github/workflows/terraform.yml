@@ -16,12 +16,12 @@ on:
         description: "Terraform action"
         required: true
         type: choice
-        options: [plan, apply, destroy]
+        options: [plan, apply, destroy, destroy-all]
 
 env:
   TF_IN_AUTOMATION: "true"
   AWS_REGION: af-south-1
-  TF_VERSION: "1.9.8"
+  TF_VERSION: "1.15.8"
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
       - run: terraform fmt -check -recursive
-      - run: terraform init -backend=false
+      - run: terraform init -backend=false -input=false
       - run: terraform validate
 
   plan:
@@ -68,7 +68,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Init
-        run: terraform init -backend-config=envs/${{ matrix.env }}/${{ matrix.env }}.tfbackend
+        run: terraform init -backend-config=envs/${{ matrix.env }}/${{ matrix.env }}.tfbackend -input=false
 
       - name: Plan
         id: plan
@@ -76,6 +76,7 @@ jobs:
           terraform plan \
             -var-file=envs/${{ matrix.env }}/${{ matrix.env }}.tfvars \
             -out=tfplan \
+            -input=false \
             -no-color
           terraform show -no-color tfplan > plan_output.txt
 
@@ -141,18 +142,19 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Init
-        run: terraform init -backend-config=envs/${{ matrix.env }}/${{ matrix.env }}.tfbackend
+        run: terraform init -backend-config=envs/${{ matrix.env }}/${{ matrix.env }}.tfbackend -input=false
 
       - name: Apply
         run: |
           terraform apply \
             -var-file=envs/${{ matrix.env }}/${{ matrix.env }}.tfvars \
+            -input=false \
             -auto-approve \
             -no-color
 
   manual:
     name: Manual ${{ github.event.inputs.action }} (${{ github.event.inputs.environment }})
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action != 'destroy-all'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     concurrency:
@@ -175,24 +177,25 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Init
-        run: terraform init -backend-config=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfbackend
+        run: terraform init -backend-config=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfbackend -input=false
 
       - name: Run
         run: |
           case "${{ github.event.inputs.action }}" in
             plan)
-              terraform plan -var-file=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfvars -no-color
+              terraform plan -var-file=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfvars -input=false -no-color
               ;;
             apply)
-              terraform apply -var-file=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfvars -auto-approve -no-color
+              terraform apply -var-file=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfvars -input=false -auto-approve -no-color
               ;;
             destroy)
-              terraform destroy -var-file=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfvars -auto-approve -no-color
+              terraform destroy -var-file=envs/${{ github.event.inputs.environment }}/${{ github.event.inputs.environment }}.tfvars -input=false -auto-approve -no-color
               ;;
           esac
+
   destroy-all:
     name: Destroy All Environments
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy-all'
     needs: fmt
     runs-on: ubuntu-latest
     strategy:
@@ -201,7 +204,7 @@ jobs:
         env: [dev, qa, prod]
     environment: ${{ matrix.env }}
     concurrency:
-      group: terraform-destroy-${{ matrix.env }}
+      group: terraform-apply-${{ matrix.env }}
       cancel-in-progress: false
     permissions:
       contents: read
@@ -220,11 +223,12 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Init
-        run: terraform init -backend-config=envs/${{ matrix.env }}/${{ matrix.env }}.tfbackend
+        run: terraform init -backend-config=envs/${{ matrix.env }}/${{ matrix.env }}.tfbackend -input=false
 
       - name: Destroy (${{ matrix.env }})
         run: |
           terraform destroy \
             -var-file=envs/${{ matrix.env }}/${{ matrix.env }}.tfvars \
+            -input=false \
             -auto-approve \
             -no-color
