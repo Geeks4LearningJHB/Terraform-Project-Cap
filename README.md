@@ -261,7 +261,9 @@ and prinicipal ARN to:
   principal_arn = data.aws_iam_session_context.current.issuer_arn
 
 23. 
+Add chekcsum for Linux on Github:
 
+terraform providers lock -platform=linux_amd64 -platform=darwin_arm64
 
 
 
@@ -374,10 +376,4 @@ README
 
 ****************************************
 TODO: set prevent_destroy only for prod () so nobody can delete prod state by accident. Reuse the `modules/capitec_s3` module, or write the resources directly.
-*
-
- Two items are not finished:
-
-1.6: the vpc_id block is commented out, not deleted. The checklist says to delete it, so delete the three lines.
-3.3: providers.tf has no required_version = ">= 1.10" line yet.
- ***************************************                             
+*                  
