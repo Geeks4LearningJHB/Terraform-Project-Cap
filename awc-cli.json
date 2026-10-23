@@ -1,0 +1,4 @@
+{
+    "kubectl": "aws eks update-kubeconfig --region af-south-1 --name seema-mt-eks-dev"
+
+}

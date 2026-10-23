@@ -1,4 +1,4 @@
-bucket = "seemat-s3-prod"
+bucket = "seema-mt-s3-dev"
 key    = "prod/terraform.tfstate"
 region = "af-south-1"
 encrypt = true

@@ -77,7 +77,7 @@ Your submission must include a `README.md` that explains:
 
 ## Deliverables
 
-1. A Git repository (or zip file naming: <surname><first_initial>-terraform) containing your complete Terraform project.
+1. A Git repository (or zip file naming: <surname><initials>-terraform) containing your complete Terraform project.
 2. A `README.md` as described above.
 3. Evidence that each environment can be independently planned and applied (screenshots) 
 

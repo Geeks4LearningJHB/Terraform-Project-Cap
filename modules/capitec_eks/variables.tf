@@ -1,22 +1,27 @@
-variable "prefix" {
-  type    = string
-  default = "seemat"
+variable "subnets" {
+  type = map(object({
+    cidr_block = string
+    availability_zone = string
+  }))
 }
 
-variable "environment" {
-  type    = string
-  default = "dev"
+variable "user"{
+  type = object({
+    surname  = string
+    initials = string
+  })
 }
 
-locals {
-  eks_cluster_name = "${var.prefix}-eks-${var.environment}"
-  iam_role_name    = "${var.prefix}-eks-iam-role-${var.environment}"
+variable "eks_config"{
+  type = object({
+    k8s_version = string
+    env = string
+    instance_type = string
+    max_nodes = number
+    min_nodes = number
+    desired_nodes = number
+    max_unavailable_nodes = number
+    capacity_type = string
+  })   
 }
 
-variable "availability_zones" {
-  default = ["af-south-1a", "af-south-1b", "af-south-1c"]
-}
-
-variable "vpc_id" {
-  default = "vpc-0d0015b3beb893003"
-}
